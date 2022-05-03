@@ -4,10 +4,31 @@ import 'package:shop_app/providers/orders_prov.dart';
 import 'package:shop_app/widgets/app_drawer.dart';
 import 'package:shop_app/widgets/order_item.dart';
 
-class OrdersScreen extends StatelessWidget {
+class OrdersScreen extends StatefulWidget {
   const OrdersScreen({Key? key}) : super(key: key);
 
   static const String routeName = '/orders-screen';
+
+  @override
+  State<OrdersScreen> createState() => _OrdersScreenState();
+}
+
+class _OrdersScreenState extends State<OrdersScreen> {
+  var _isLoading = false;
+
+  @override
+  void initState() {
+    _isLoading = true;
+
+    Provider.of<OrdersProv>(context, listen: false)
+        .fetchAndSetOrders()
+        .then((_) {
+      setState(() {
+        _isLoading = false;
+      });
+    });
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,14 +45,16 @@ class OrdersScreen extends StatelessWidget {
         //       },
         //       icon: const Icon(Icons.arrow_back)),
       ),
-      body: ListView.builder(
-        itemCount: orderData.orders.length,
-        itemBuilder: (context, index) {
-          return OrderItem(
-            orderItem: orderData.orders[index],
-          );
-        },
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: orderData.orders.length,
+              itemBuilder: (context, index) {
+                return OrderItem(
+                  orderItem: orderData.orders[index],
+                );
+              },
+            ),
     );
   }
 }
