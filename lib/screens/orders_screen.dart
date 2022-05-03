@@ -4,35 +4,14 @@ import 'package:shop_app/providers/orders_prov.dart';
 import 'package:shop_app/widgets/app_drawer.dart';
 import 'package:shop_app/widgets/order_item.dart';
 
-class OrdersScreen extends StatefulWidget {
+class OrdersScreen extends StatelessWidget {
   const OrdersScreen({Key? key}) : super(key: key);
 
   static const String routeName = '/orders-screen';
 
   @override
-  State<OrdersScreen> createState() => _OrdersScreenState();
-}
-
-class _OrdersScreenState extends State<OrdersScreen> {
-  var _isLoading = false;
-
-  @override
-  void initState() {
-    _isLoading = true;
-
-    Provider.of<OrdersProv>(context, listen: false)
-        .fetchAndSetOrders()
-        .then((_) {
-      setState(() {
-        _isLoading = false;
-      });
-    });
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final orderData = Provider.of<OrdersProv>(context, listen: false);
+    //final orderData = Provider.of<OrdersProv>(context, listen: false);
     return Scaffold(
       drawer: const AppDrawer(),
       appBar: AppBar(
@@ -45,7 +24,33 @@ class _OrdersScreenState extends State<OrdersScreen> {
         //       },
         //       icon: const Icon(Icons.arrow_back)),
       ),
-      body: _isLoading
+      body: FutureBuilder(
+        //initialData: false,
+        future:
+            Provider.of<OrdersProv>(context, listen: false).fetchAndSetOrders(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.connectionState == ConnectionState.done) {
+            return Consumer<OrdersProv>(
+              builder: (context, orderData, _) => ListView.builder(
+                itemCount: orderData.orders.length,
+                itemBuilder: (context, index) {
+                  return OrderItem(
+                    orderItem: orderData.orders[index],
+                  );
+                },
+              ),
+            );
+          } else if (snapshot.connectionState == ConnectionState.none) {
+            return const Center(child: Text('No data!'));
+          } else {
+            return snapshot.error != null
+                ? const Center(child: Text('Erro!'))
+                : const SizedBox.shrink();
+          }
+        },
+      ), /* _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
               itemCount: orderData.orders.length,
@@ -54,7 +59,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   orderItem: orderData.orders[index],
                 );
               },
-            ),
+            ),*/
     );
   }
 }
