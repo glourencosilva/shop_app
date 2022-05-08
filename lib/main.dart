@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shop_app/providers/auth_prov.dart';
+import 'package:shop_app/screens/auth_screen.dart';
 
 import 'providers/cart_prov.dart';
 import 'providers/orders_prov.dart';
@@ -19,7 +21,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   ByteData data =
-      await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
+  await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
   SecurityContext.defaultContext
       .setTrustedCertificatesBytes(data.buffer.asUint8List());
 
@@ -48,8 +50,14 @@ class MyApp extends StatelessWidget {
     );
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<ProductProv>(
-          create: (context) => ProductProv(),
+        ChangeNotifierProvider<AuthProv>(
+          create: (context) => AuthProv(),
+          //child: const AuthScreen(),
+        ),
+        ChangeNotifierProxyProvider<AuthProv, ProductProv>(
+          create: (context) => ProductProv('', []),
+          update: (context, authProv, productProv) => ProductProv(
+              authProv.token, productProv == null ? [] :  productProv.items),
         ),
         ChangeNotifierProvider<CartProv>(
           create: (context) => CartProv(),
@@ -58,25 +66,33 @@ class MyApp extends StatelessWidget {
           create: (context) => OrdersProv(),
         ),
       ],
-      child: MaterialApp(
-        title: 'MyShop',
-        debugShowCheckedModeBanner: false,
-        theme: theme.copyWith(
-          colorScheme: theme.colorScheme.copyWith(
-            secondary: Colors.deepOrange,
-            primary: Colors.purple,
-          ),
-        ),
-        initialRoute: ProductOverviewScreen.routeName,
-        routes: {
-          ProductOverviewScreen.routeName: (context) => ProductOverviewScreen(),
-          ProductDetailScreen.routeName: (context) =>
+      child: Consumer<AuthProv>(
+        builder: (context, authData, child) {
+          return MaterialApp(
+            title: 'MyShop',
+            debugShowCheckedModeBanner: false,
+            theme: theme.copyWith(
+              colorScheme: theme.colorScheme.copyWith(
+                secondary: Colors.deepOrange,
+                primary: Colors.purple,
+              ),
+            ),
+            initialRoute: authData.isAuth ? UserProductsScreen.routeName : AuthScreen.routeName,
+            routes: {
+              ProductOverviewScreen.routeName: (context) =>
+                  ProductOverviewScreen(),
+              ProductDetailScreen.routeName: (context) =>
               const ProductDetailScreen(),
-          ChartScreen.routeName: (context) => const ChartScreen(),
-          OrdersScreen.routeName: (context) => const OrdersScreen(),
-          PaymantScreen.routeName: (context) => const PaymantScreen(),
-          UserProductsScreen.routeName: (context) => const UserProductsScreen(),
-          EditProductScreen.routeName: (context) => const EditProductScreen(),
+              ChartScreen.routeName: (context) => const ChartScreen(),
+              OrdersScreen.routeName: (context) => const OrdersScreen(),
+              PaymantScreen.routeName: (context) => const PaymantScreen(),
+              UserProductsScreen.routeName: (
+                  context) => const UserProductsScreen(),
+              EditProductScreen.routeName: (
+                  context) => const EditProductScreen(),
+              AuthScreen.routeName: (context) => const AuthScreen(),
+            },
+          );
         },
       ),
     );

@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:core';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:shop_app/constants.dart';
@@ -8,6 +10,9 @@ import 'package:uuid/uuid.dart';
 import 'package:http/http.dart' as http;
 
 class ProductProv with ChangeNotifier {
+  ProductProv(this.authToken, this._items);
+
+  //this.authToken, this._items
   List<Product> _items = [
     // Product(
     //   id: 'p1',
@@ -85,6 +90,10 @@ class ProductProv with ChangeNotifier {
   //   notifyListeners();
   // }
 
+  final String authToken;
+
+
+
   List<Product> get items {
     // if (_showFavoritesOnly) {
     //   return _items.where((prod) => prod.isFavorite).toList();
@@ -93,7 +102,7 @@ class ProductProv with ChangeNotifier {
   }
 
   Future<void> fetchAndSetProducts() async {
-    final url = Uri.https(baseUrlApi, productUrlApi);
+    final url = Uri.https(baseUrlApi, '$productUrlApi?auth=$authToken');
     try {
       await http.get(url).then((productResponse) {
         final extractData =
@@ -102,11 +111,11 @@ class ProductProv with ChangeNotifier {
         extractData.forEach((prodId, productData) {
           var product = Product(
               id: prodId,
-              title: productData['title'] ?? '',
-              description: productData['description'] ?? '',
-              imageUrl: productData['imageUrl'] ?? '',
-              price: productData['price'] ?? 0.0,
-              isFavorite: productData['isFavorite'] ?? false);
+              title: productData['title'] as String,
+              description: productData['description'] as String,
+              imageUrl: productData['imageUrl'] as String,
+              price: productData['price'] as double,
+              isFavorite: productData['isFavorite'] as bool);
           loadedProducts.add(product);
 
           _items = loadedProducts;
@@ -114,7 +123,8 @@ class ProductProv with ChangeNotifier {
         });
       });
     } on Exception catch (e) {
-      throw Exception('Erro ai pegar dados do servidor remoto');
+      //throw Exception('Erro ai pegar dados do servidor remoto');
+      throw Exception(e);
     }
   }
 

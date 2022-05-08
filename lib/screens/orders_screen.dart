@@ -4,10 +4,28 @@ import 'package:shop_app/providers/orders_prov.dart';
 import 'package:shop_app/widgets/app_drawer.dart';
 import 'package:shop_app/widgets/order_item.dart';
 
-class OrdersScreen extends StatelessWidget {
+class OrdersScreen extends StatefulWidget {
   const OrdersScreen({Key? key}) : super(key: key);
 
   static const String routeName = '/orders-screen';
+
+  @override
+  State<OrdersScreen> createState() => _OrdersScreenState();
+}
+
+class _OrdersScreenState extends State<OrdersScreen> {
+  late Future<void> _ordersFuture;
+
+  Future<void> obtainOrdersFuture() async {
+    return await Provider.of<OrdersProv>(context, listen: false)
+        .fetchAndSetOrders();
+  }
+
+  @override
+  void initState() {
+    _ordersFuture = obtainOrdersFuture();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,18 +34,9 @@ class OrdersScreen extends StatelessWidget {
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Your Orders'),
-        //   automaticallyImplyLeading: false,
-        //   leading: IconButton(
-        //       onPressed: () {
-        //         Navigator.of(context)
-        //             .popAndPushNamed(ProductOverviewScreen.routeName);
-        //       },
-        //       icon: const Icon(Icons.arrow_back)),
       ),
       body: FutureBuilder(
-        //initialData: false,
-        future:
-            Provider.of<OrdersProv>(context, listen: false).fetchAndSetOrders(),
+        future: _ordersFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -50,16 +59,7 @@ class OrdersScreen extends StatelessWidget {
                 : const SizedBox.shrink();
           }
         },
-      ), /* _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: orderData.orders.length,
-              itemBuilder: (context, index) {
-                return OrderItem(
-                  orderItem: orderData.orders[index],
-                );
-              },
-            ),*/
+      ),
     );
   }
 }
