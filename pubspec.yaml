@@ -35,6 +35,7 @@ dependencies:
   equatable: ^2.0.3
   intl: ^0.17.0
   http: ^0.13.4
+  responsive_framework: ^0.1.7
 
 dev_dependencies:
   flutter_test:
