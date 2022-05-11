@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:shop_app/providers/product.dart';
 
 class CartItemModel extends Equatable{
   final String id;

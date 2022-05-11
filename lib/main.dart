@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shop_app/providers/auth_prov.dart';
 import 'package:shop_app/screens/auth_screen.dart';
+import 'package:shop_app/screens/splash_screen.dart';
 
 import 'providers/cart_prov.dart';
 import 'providers/orders_prov.dart';
@@ -22,7 +23,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   ByteData data =
-  await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
+      await PlatformAssetBundle().load('assets/ca/lets-encrypt-r3.pem');
   SecurityContext.defaultContext
       .setTrustedCertificatesBytes(data.buffer.asUint8List());
 
@@ -51,20 +52,27 @@ class MyApp extends StatelessWidget {
     );
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<AuthProv>(
-          create: (context) => AuthProv(),
-          //child: const AuthScreen(),
+        ChangeNotifierProvider.value(
+          value: AuthProv(),
+          child: const AuthScreen(),
         ),
         ChangeNotifierProxyProvider<AuthProv, ProductProv>(
-          create: (context) => ProductProv('', []),
+          create: (context) => ProductProv('', [], ''),
           update: (context, authProv, productProv) => ProductProv(
-              authProv.token, productProv == null ? [] :  productProv.items),
+              authProv.token,
+              productProv == null ? [] : productProv.items,
+              authProv.userId),
         ),
         ChangeNotifierProvider<CartProv>(
           create: (context) => CartProv(),
         ),
-        ChangeNotifierProvider<OrdersProv>(
-          create: (context) => OrdersProv(),
+        ChangeNotifierProxyProvider<AuthProv, OrdersProv>(
+          create: (context) => OrdersProv('', [], ''),
+          update: (context, authProv, ordersProv) => OrdersProv(
+              authProv.token,
+              ordersProv == null ? [] : ordersProv.orders,
+              authProv.userId
+          ),
         ),
       ],
       child: Consumer<AuthProv>(
@@ -91,19 +99,23 @@ class MyApp extends StatelessWidget {
                 primary: Colors.purple,
               ),
             ),
-            initialRoute: authData.isAuth ? UserProductsScreen.routeName : AuthScreen.routeName,
+            home: authData.isAuth
+                ? ProductOverviewScreen()
+                : FutureBuilder(
+                future: authData.tryAutoLogin(),
+                builder: (context, authResultSnapshot)=> authResultSnapshot.connectionState == ConnectionState.waiting ? const SplashScreen() : const AuthScreen()),
             routes: {
               ProductOverviewScreen.routeName: (context) =>
                   ProductOverviewScreen(),
               ProductDetailScreen.routeName: (context) =>
-              const ProductDetailScreen(),
+                  const ProductDetailScreen(),
               ChartScreen.routeName: (context) => const ChartScreen(),
               OrdersScreen.routeName: (context) => const OrdersScreen(),
               PaymantScreen.routeName: (context) => const PaymantScreen(),
-              UserProductsScreen.routeName: (
-                  context) => const UserProductsScreen(),
-              EditProductScreen.routeName: (
-                  context) => const EditProductScreen(),
+              UserProductsScreen.routeName: (context) =>
+                  const UserProductsScreen(),
+              EditProductScreen.routeName: (context) =>
+                  const EditProductScreen(),
               AuthScreen.routeName: (context) => const AuthScreen(),
             },
           );

@@ -10,20 +10,30 @@ import 'package:uuid/uuid.dart';
 import 'package:http/http.dart' as http;
 
 class ProductProv with ChangeNotifier {
-  ProductProv(this.authToken, this._items);
+  ProductProv(this.authToken, this._items, this.userId);
 
   //this.authToken, this._items
   late List<Product> _items = [];
 
   final String authToken;
+  final String userId;
 
   List<Product> get items {
     return [..._items];
   }
 
-  Future<void> fetchAndSetProducts() async {
-    final queryParams = <String, dynamic>{'auth': authToken};
-    final url = Uri.https(baseUrlApi, productUrlApi, queryParams);
+  Future<void> fetchAndSetProducts([bool filterByUser = false]) async {
+    final filterString =
+        filterByUser ? 'orderBy="creatorId"&equalTo="$userId"' : '';
+    var url = Uri.parse(Uri.decodeFull(
+        'https://flutter-curse-3f76d-default-rtdb.firebaseio.com/products.json?auth=$authToken&$filterString'));
+    // final queryParams = <String, String>{
+    //   "auth": authToken,
+    //   "orderBy": "creatorId",
+    //   "equalTo": userId,
+    // };
+    //var url = Uri.https(baseUrlApi, productUrlApi, queryParams);
+
     try {
       final response = await http.get(url);
 
@@ -31,7 +41,11 @@ class ProductProv with ChangeNotifier {
       if (extractedData.isEmpty) {
         return;
       }
-
+      url = Uri.https(
+          baseUrlApi, '/userFavorite/$userId.json', {'auth': authToken});
+      final favoriteResponse = await http.get(url);
+      final favoriteData =
+          json.decode(favoriteResponse.body) as Map<String, dynamic>;
       final List<Product> loadedProducts = [];
       extractedData.forEach((prodId, prodData) {
         loadedProducts.add(Product(
@@ -39,8 +53,8 @@ class ProductProv with ChangeNotifier {
           title: prodData['title'],
           description: prodData['description'],
           price: prodData['price'],
-          // isFavorite:
-          // favoriteData == null ? false : favoriteData[prodId] ?? false,
+          isFavorite:
+              favoriteData.isEmpty ? false : favoriteData[prodId] ?? false,
           imageUrl: prodData['imageUrl'],
         ));
       });
@@ -49,35 +63,12 @@ class ProductProv with ChangeNotifier {
     } on Exception catch (e) {
       throw Exception(e);
     }
-
-    // try {
-    //   await http.get(url).then((productResponse) {
-    //
-    //     final extractData =
-    //         jsonDecode(productResponse.body) as Map<String, dynamic>;
-    //     final List<Product> loadedProducts = [];
-    //     extractData.forEach((prodId, productData) {
-    //       var product = Product(
-    //           id: prodId,
-    //           title: productData['title'] as String,
-    //           description: productData['description'] as String,
-    //           imageUrl: productData['imageUrl'] as String,
-    //           price: productData['price'] as double,
-    //           isFavorite: productData['isFavorite'] as bool);
-    //       loadedProducts.add(product);
-    //
-    //       _items = loadedProducts;
-    //       notifyListeners();
-    //     });
-    //   });
-    // } on Exception catch (e) {
-    //   //throw Exception('Erro ai pegar dados do servidor remoto');
-    //   throw Exception(e);
-    // }
   }
 
   Future<void> addProduct(Product product) async {
-    final url = Uri.https(baseUrlApi, productUrlApi);
+    //final url = Uri.https(baseUrlApi, productUrlApi);
+    final queryParams = <String, dynamic>{'auth': authToken};
+    final url = Uri.https(baseUrlApi, productUrlApi, queryParams);
 
     var nProduct = <String, dynamic>{
       'title': product.title,
@@ -85,6 +76,7 @@ class ProductProv with ChangeNotifier {
       'imageUrl': product.imageUrl,
       'price': product.price,
       'isFavorite': product.isFavorite,
+      'creatorId': userId,
     };
 
     try {
@@ -105,7 +97,7 @@ class ProductProv with ChangeNotifier {
     } on Exception catch (e) {
       throw Exception('Deu ruim');
     }
-
+    notifyListeners();
     //_items.add(newProduct);
   }
 
@@ -121,14 +113,15 @@ class ProductProv with ChangeNotifier {
   Future<void> updateProduct(String id, Product newProduct) async {
     final productIndex = _items.indexWhere((prod) => prod.id == id);
     if (productIndex >= 0) {
-      final url = Uri.https(baseUrlApi, '/products/$id.json');
+      final queryParams = <String, dynamic>{'auth': authToken};
+      final url = Uri.https(baseUrlApi, '/products/$id.json', queryParams);
 
       var product = {
         'title': newProduct.title,
         'description': newProduct.description,
         'imageUrl': newProduct.imageUrl,
         'price': newProduct.price,
-        'isFavorite': newProduct.isFavorite,
+        //'isFavorite': newProduct.isFavorite,
       };
       var productJson = jsonEncode(product);
       await http.patch(
@@ -141,7 +134,8 @@ class ProductProv with ChangeNotifier {
   }
 
   Future<void> deleteProduct(String id) async {
-    final url = Uri.https(baseUrlApi, '/products/$id.json');
+    final queryParams = <String, dynamic>{'auth': authToken};
+    final url = Uri.https(baseUrlApi, '/products/$id.json', queryParams);
     final existingProductIndex = _items.indexWhere((prod) => prod.id == id);
     var existingProduct = _items[existingProductIndex];
     _items.removeAt(existingProductIndex);

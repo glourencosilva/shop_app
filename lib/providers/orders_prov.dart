@@ -11,15 +11,18 @@ import '../models/cart_item_model.dart';
 import '../models/order_item_model.dart';
 
 class OrdersProv with ChangeNotifier {
+  OrdersProv(this.authToken, this._orders, this.userId);
+
   late List<OrderItemModel> _orders = [];
+  final String authToken;
+  final String userId;
 
   List<OrderItemModel> get orders => [..._orders];
 
-  //final _idOrder = const Uuid().v4();
-
   Future<void> addOrder(List<CartItemModel> cartProducts, double total) async {
     final dateTime = DateTime.now();
-    final url = Uri.https(baseUrlApi, ordersUrlApi);
+    //final url = Uri.https(baseUrlApi, ordersUrlApi, {'auth': authToken});
+    final url = Uri.https(baseUrlApi, '/orders/$userId.json', {'auth': authToken});
 
     final orderMap = <String, dynamic>{
       'amount': total,
@@ -44,9 +47,12 @@ class OrdersProv with ChangeNotifier {
     _orders.insert(0, order);
     notifyListeners();
   }
+  // url = Uri.https(
+  // baseUrlApi, '/userFavorite/$userId.json', {'auth': authToken});
 
   Future<void> fetchAndSetOrders() async {
-    final url = Uri.https(baseUrlApi, ordersUrlApi);
+    //final url = Uri.https(baseUrlApi, ordersUrlApi, {'auth': authToken});
+    final url = Uri.https(baseUrlApi, '/orders/$userId.json', {'auth': authToken});
     final response = await http.get(url);
 
     List<OrderItemModel> loadedOrders = [];
@@ -72,7 +78,7 @@ class OrdersProv with ChangeNotifier {
     });
     _orders = loadedOrders;
     _orders.reversed.toList();
-   // _orders.insert(0, order);
+    // _orders.insert(0, order);
     notifyListeners();
   }
 

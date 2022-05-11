@@ -11,7 +11,7 @@ class UserProductsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final productData = Provider.of<ProductProv>(context);
+    //final productData = Provider.of<ProductProv>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Products'),
@@ -24,30 +24,41 @@ class UserProductsScreen extends StatelessWidget {
               icon: const Icon(Icons.add)),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () => _refreshProduct(context),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: ListView.builder(
-              itemCount: productData.items.length,
-              itemBuilder: (context, index) {
-                return Column(
-                  children: [
-                    UserProductItemWidget(
-                      id: productData.items[index].id,
-                      title: productData.items[index].title,
-                      imageUrl: productData.items[index].imageUrl,
+      body: FutureBuilder(
+          future: _refreshProduct(context),
+          builder: (context, snapshot) {
+            return snapshot.connectionState == ConnectionState.waiting
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : RefreshIndicator(
+                    onRefresh: () => _refreshProduct(context),
+                    child: Consumer<ProductProv>(
+                      builder: (context, productProv, child) => Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ListView.builder(
+                            itemCount: productProv.items.length,
+                            itemBuilder: (context, index) {
+                              return Column(
+                                children: [
+                                  UserProductItemWidget(
+                                    id: productProv.items[index].id,
+                                    title: productProv.items[index].title,
+                                    imageUrl: productProv.items[index].imageUrl,
+                                  ),
+                                  const Divider(),
+                                ],
+                              );
+                            }),
+                      ),
                     ),
-                    const Divider(),
-                  ],
-                );
-              }),
-        ),
-      ),
+                  );
+          }),
     );
   }
 
   Future<void> _refreshProduct(BuildContext context) async {
-    await Provider.of<ProductProv>(context, listen: false).fetchAndSetProducts();
+    await Provider.of<ProductProv>(context, listen: false)
+        .fetchAndSetProducts(true);
   }
 }

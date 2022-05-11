@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -31,25 +30,24 @@ class Product with ChangeNotifier {
         imageUrl: '',
       );
 
-  
-
-  Future<void> toggleFavoriteStatus() async{
+  Future<void> toggleFavoriteStatus(String token, String userId) async {
     final oldStatus = isFavorite;
     isFavorite = !isFavorite;
     notifyListeners();
-    final url = Uri.https(baseUrlApi, '/products/$id.json');
+    //final url = Uri.https(baseUrlApi, '/products/$id.json', {'auth': token});
+    final url = Uri.https(baseUrlApi, '/userFavorite/$userId/$id.json', {'auth': token});
     try {
-      final response = await http.patch(url, body: jsonEncode({'isFavorite': isFavorite}));
-      if(response.statusCode >= 400){
+      final response =
+          await http.put(url, body: jsonEncode(isFavorite));
+      if (response.statusCode >= 400) {
         _setFavValue(oldStatus);
       }
-
     } on HttpException catch (e) {
       _setFavValue(oldStatus);
     }
   }
 
-  void _setFavValue(bool newValue){
+  void _setFavValue(bool newValue) {
     isFavorite = newValue;
     notifyListeners();
   }
