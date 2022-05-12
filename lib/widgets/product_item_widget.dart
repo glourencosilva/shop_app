@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shop_app/constants.dart';
 import 'package:shop_app/providers/auth_prov.dart';
 import 'package:shop_app/providers/cart_prov.dart';
 import 'package:shop_app/providers/product.dart';
@@ -43,21 +44,34 @@ class ProductItemWidget extends StatelessWidget {
                   'title': productProvider.title
                 });
           },
-          child: Image.network(
-            productProvider.imageUrl,
-            fit: BoxFit.cover,
+          child: Hero(
+            tag: productProvider.id,
+            child: FadeInImage(
+              placeholder: const AssetImage(imageProductPlaceholder),
+              image: NetworkImage(productProvider.imageUrl),
+            fit: BoxFit.cover,),
           ),
+          // Image.network(
+          //   productProvider.imageUrl,
+          //   fit: BoxFit.cover,
+          // ),
         ),
         footer: GridTileBar(
           leading: Consumer<Product>(
-            builder: (context, product, _) => IconButton(
-              onPressed: () {
-                product.toggleFavoriteStatus(authData.token, authData.userId);
-              },
-              icon: Icon(
-                  product.isFavorite ? Icons.favorite : Icons.favorite_border),
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            builder: (context, product, _) =>
+                IconButton(
+                  onPressed: () {
+                    product.toggleFavoriteStatus(
+                        authData.token, authData.userId);
+                  },
+                  icon: Icon(
+                      product.isFavorite ? Icons.favorite : Icons
+                          .favorite_border),
+                  color: Theme
+                      .of(context)
+                      .colorScheme
+                      .secondary,
+                ),
           ),
           trailing: IconButton(
             onPressed: () {
@@ -78,12 +92,14 @@ class ProductItemWidget extends StatelessWidget {
               );
             },
             icon: const Icon(Icons.shopping_cart),
-            color: Theme.of(context).colorScheme.secondary,
+            color: Theme
+                .of(context)
+                .colorScheme
+                .secondary,
           ),
           title: Text(productProvider.title, textAlign: TextAlign.center),
           backgroundColor: Colors.black87,
         ),
-      ),
-    );
+      ),);
   }
 }
